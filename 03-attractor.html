@@ -28,7 +28,10 @@
 <script>
 let SEED = 42;
 const STOPS = ['#2ec5b6', '#5bb0ff', '#7b6cff', '#ff6b8a', '#ffb36b'];
-const N = 340000;   // 点数
+const N = 26000;   // 每帧点数（拖尾累积 → 总密度更高）
+
+// 动画状态：基准参数 + 持续迭代点
+let base = null, px = 0.1, py = 0.1;
 
 let RAMP = [];
 function rampColor(t) {
@@ -38,19 +41,18 @@ function rampColor(t) {
   return lerpColor(RAMP[i], RAMP[i + 1], seg - i);
 }
 
-function setup() { createCanvas(windowWidth, windowHeight); pixelDensity(2); noLoop(); redraw(); }
-function windowResized() { resizeCanvas(windowWidth, windowHeight); redraw(); }
-function keyPressed() { if (key === ' ') { SEED = floor(random(99999)); redraw(); } }
-function mousePressed() { SEED = floor(random(99999)); redraw(); }
+function setup() { createCanvas(windowWidth, windowHeight); pixelDensity(2); frameRate(30); reset(); }
+function windowResized() { resizeCanvas(windowWidth, windowHeight); background(11, 11, 14); }
+function keyPressed() { if (key === ' ') reset(true); }
+function mousePressed() { reset(true); }
 
-function draw() {
+// 选一组非退化基准参数（每种子一套），重置画布与迭代点
+function reset(reroll) {
+  if (reroll) SEED = floor(random(99999));
   randomSeed(SEED);
-  background(11, 11, 14);
-
-  // de Jong 吸引子：4 个参数定形态。自动排除"坍缩成一点"的退化解
   let a, b, c, d, tries = 0;
   while (tries < 40) {
-    a = random(-3, 3); b = random(-3, 3); c = random(-3, 3); d = random(-3, 3);
+    a = random(-2.6, 2.6); b = random(-2.6, 2.6); c = random(-2.6, 2.6); d = random(-2.6, 2.6);
     let tx = 0.1, ty = 0.1, minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
     for (let i = 0; i < 1600; i++) {
       const nx = Math.sin(a * ty) - Math.cos(b * tx);
@@ -64,28 +66,42 @@ function draw() {
     tries++;
     if ((maxx - minx) > 1.3 && (maxy - miny) > 1.3) break;   // 够展开 → 用它
   }
+  base = { a, b, c, d };
+  px = random(-1, 1); py = random(-1, 1);
+  background(11, 11, 14);
+}
+
+function draw() {
+  // 拖尾：每帧用半透明底色轻擦上一帧 → 流动残影 + 密度累积
+  blendMode(BLEND);
+  noStroke();
+  fill(11, 11, 14, 18);
+  rect(0, 0, width, height);
+
+  // 参数绕基准小幅漂移（贴着非退化基准走，避免坍缩成细线）→ 丝缦缓慢流动
+  const t = frameCount * 0.01;
+  const a = base.a + Math.sin(t * 0.70) * 0.18;
+  const b = base.b + Math.cos(t * 0.53) * 0.18;
+  const c = base.c + Math.sin(t * 0.31) * 0.18;
+  const d = base.d + Math.cos(t * 0.87) * 0.18;
+
   const scale = min(width, height) * 0.21;
   const cx = width / 2, cy = height / 2;
 
-  let x = random(-1, 1), y = random(-1, 1);
-  for (let i = 0; i < 1000; i++) {   // 预热，跳过初始瞬态
-    const nx = Math.sin(a * y) - Math.cos(b * x);
-    const ny = Math.sin(c * x) - Math.cos(d * y);
-    x = nx; y = ny;
-  }
-
   blendMode(ADD);
   strokeWeight(1.0);
+  let x = px, y = py;
   for (let i = 0; i < N; i++) {
     const nx = Math.sin(a * y) - Math.cos(b * x);
     const ny = Math.sin(c * x) - Math.cos(d * y);
     const speed = Math.hypot(nx - x, ny - y);   // 移动速度 → 上色
     x = nx; y = ny;
     const col = rampColor(constrain(speed / 3.2, 0, 1));
-    stroke(red(col), green(col), blue(col), 10);
+    stroke(red(col), green(col), blue(col), 12);
     point(cx + x * scale, cy + y * scale);
   }
   blendMode(BLEND);
+  px = x; py = y;   // 保留迭代状态供下一帧续算
 }
 </script>
 </body>

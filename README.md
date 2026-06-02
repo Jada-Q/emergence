@@ -9,8 +9,8 @@
 | # | 文件 | 算法 | 形态 | 状态 |
 |---|------|------|------|------|
 | No.1 | `01-growth.html` | 差分生长 Differential Growth | 网（线）| **实时生长**，约 50 秒长满 15000 节点 |
-| No.2 | `02-architecture.html` | 生成构造 Generative Architecture | 塔（体）| 静态单帧，等距结构塔群 |
-| No.3 | `03-attractor.html` | 奇异吸引子 de Jong Attractor | 缦（点）| 静态单帧，34 万点迭代 |
+| No.2 | `02-architecture.html` | 生成构造 Generative Architecture | 塔（体）| **实时**，塔群随时间缓慢起伏，自动垂直居中 |
+| No.3 | `03-attractor.html` | 奇异吸引子 de Jong Attractor | 缦（点）| **实时**，参数缓慢漂移使丝缦流动变形（带拖尾残影）|
 
 ## 算法简述
 
@@ -30,6 +30,6 @@ python3 -m http.server 8000
 
 ## 待办 / 可扩展
 
-- No.2、No.3 目前是静态单帧；要做成 live 系列可改：构造逐塔升起、吸引子逐点显影。
+- 三件均为实时动态（No.2 塔群起伏 / No.3 丝缦漂移 / No.1 生长）。
 - 曾试过 No.4 反应扩散（Gray-Scott），因柔边质感与系列不统一 + 计算卡顿，已弃。
 - 配色 / 密度 / 构图均可调（见各文件顶部参数注释）。
