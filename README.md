@@ -4,6 +4,21 @@
 
 视觉语言统一：近黑底 `#0b0b0e` + 同一渐变色谱（青→蓝→紫→粉→橙）+ 角落签名。每件 **点击 / 空格 = 换种子重生成**。
 
+🔗 **在线演示**：https://jada-q.github.io/emergence/
+
+## 演示（实时动态）
+
+> 以下为录屏 GIF（循环）。打开[在线演示](https://jada-q.github.io/emergence/)可交互、换种子。
+
+**No.1 · GROWTH** — 差分生长，一条闭合线实时折叠成有机网
+![Growth](assets/no1-growth.gif)
+
+**No.2 · ARCHITECTURE** — 等距结构塔群随时间缓慢起伏
+![Architecture](assets/no2-architecture.gif)
+
+**No.3 · ATTRACTOR** — de Jong 参数漂移使数学丝缦流动变形
+![Attractor](assets/no3-attractor.gif)
+
 ## 三件
 
 | # | 文件 | 算法 | 形态 | 状态 |
