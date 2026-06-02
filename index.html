@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EMERGENCE · 生成艺术系列</title>
+<meta name="description" content="EMERGENCE — 生成艺术系列。每件一个算法，种子驱动、可复现。差分生长 / 生成构造 / 奇异吸引子。" />
+<style>
+  :root { --bg:#0b0b0e; --fg:#e8e4dc; --dim:#8a8f9a; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:var(--bg); color:var(--fg); min-height:100vh;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    padding: 64px 24px 48px; display:flex; flex-direction:column; align-items:center;
+  }
+  header { text-align:center; margin-bottom:56px; }
+  h1 {
+    font-size: clamp(40px, 9vw, 96px); font-weight:600; letter-spacing: 6px;
+    background: linear-gradient(90deg,#2ec5b6,#5bb0ff,#7b6cff,#ff6b8a,#ffb36b);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .tagline { margin-top:14px; color:var(--dim); font-size:13px; letter-spacing:1px; }
+  .grid {
+    display:grid; gap:22px; width:100%; max-width:1080px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  .card {
+    display:block; text-decoration:none; color:inherit;
+    border:1px solid #1c1c22; border-radius:12px; overflow:hidden;
+    background:#0d0d11; transition: border-color .25s ease, transform .25s ease;
+  }
+  .card:hover { border-color:#33343d; transform: translateY(-3px); }
+  .card img { width:100%; aspect-ratio: 16/10; object-fit:cover; display:block; background:#0b0b0e; }
+  .meta { padding:16px 18px; }
+  .no { font-size:11px; color:var(--dim); letter-spacing:2px; }
+  .name { font-size:17px; font-weight:600; margin:6px 0 4px; letter-spacing:1px; }
+  .algo { font-size:12px; color:var(--dim); }
+  footer { margin-top:48px; color:var(--dim); font-size:11px; text-align:center; line-height:1.9; }
+  footer a { color:#7b6cff; text-decoration:none; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>EMERGENCE</h1>
+    <div class="tagline">生成艺术系列 · 简单规则长出复杂形态 · 点击作品 → 进入后点击/空格换种子</div>
+  </header>
+
+  <main class="grid">
+    <a class="card" href="01-growth.html">
+      <img src="thumb-01.png" alt="Growth — 差分生长" loading="lazy" />
+      <div class="meta">
+        <div class="no">No.1</div>
+        <div class="name">GROWTH</div>
+        <div class="algo">差分生长 · 一条线折叠成有机网（实时生长）</div>
+      </div>
+    </a>
+    <a class="card" href="02-architecture.html">
+      <img src="thumb-02.png" alt="Architecture — 生成构造" loading="lazy" />
+      <div class="meta">
+        <div class="no">No.2</div>
+        <div class="name">ARCHITECTURE</div>
+        <div class="algo">生成构造 · 等距结构塔群</div>
+      </div>
+    </a>
+    <a class="card" href="03-attractor.html">
+      <img src="thumb-03.png" alt="Attractor — 奇异吸引子" loading="lazy" />
+      <div class="meta">
+        <div class="no">No.3</div>
+        <div class="name">ATTRACTOR</div>
+        <div class="algo">奇异吸引子 · 百万点凝成数学丝缦</div>
+      </div>
+    </a>
+  </main>
+
+  <footer>
+    Made with <a href="https://p5js.org" target="_blank" rel="noopener">p5.js</a> ·
+    种子驱动、可复现 · <a href="README.md">README</a><br/>
+    © Jada-Q · EMERGENCE
+  </footer>
+</body>
+</html>

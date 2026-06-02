@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Growth · EMERGENCE No.1</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; }
+  html, body { height: 100%; background: #0b0b0e; overflow: hidden; }
+  #sig {
+    position: fixed; left: 22px; bottom: 18px; z-index: 10;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    color: rgba(200,210,225,0.32); font-size: 11px; letter-spacing: 2px;
+    pointer-events: none; user-select: none;
+  }
+  #hint {
+    position: fixed; right: 22px; bottom: 18px; z-index: 10;
+    font-family: ui-monospace, Menlo, monospace;
+    color: rgba(200,210,225,0.20); font-size: 10px; letter-spacing: 1px;
+    pointer-events: none; user-select: none;
+  }
+</style>
+</head>
+<body>
+  <div id="sig">GROWTH&nbsp;·&nbsp;EMERGENCE&nbsp;No.1</div>
+  <div id="hint">CLICK / SPACE → 换种子</div>
+<script>
+let SEED = 3;
+let nodes = [];
+let growing = true;
+const STEPS_PER_FRAME = 2;   // 每帧生长步数：越大长越快
+
+// 差分生长参数
+const MAX_NODES = 15000;  // 上限拉高 → 铺满（性能上限，再高会卡）
+const MAXLEN = 9;     // 段超过这个长度 → 插新点（生长）
+const R = 15;         // 排斥半径
+const KA = 0.42;      // 邻居吸引强度（保持间距 + 平滑）
+const KR = 0.62;      // 排斥强度（避免自交 → 折叠）
+const MARGIN = 50;    // 软边界作用区
+const BFORCE = 1.3;   // 软回弹强度：碰边往里推，不压成直线
+const JITTER = 0.9;   // 噪声抖动强度 → 无序度
+
+// 发光珊瑚调色板（沿生长顺序渐变）
+const STOPS = ['#2ec5b6', '#5bb0ff', '#7b6cff', '#ff6b8a', '#ffb36b'];
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  pixelDensity(2);
+  reset();
+}
+function windowResized() { resizeCanvas(windowWidth, windowHeight); reset(); }
+function keyPressed() { if (key === ' ') reset(true); }
+function mousePressed() { reset(true); }
+
+// reroll=true 时换种子重新开始生长
+function reset(reroll) {
+  if (reroll) SEED = floor(random(99999));
+  randomSeed(SEED);
+  noiseSeed(SEED);
+  initNodes();
+  growing = true;
+}
+
+function draw() {
+  // 持续生长：每帧只跑几步 → 看得见线在长
+  if (growing) {
+    for (let s = 0; s < STEPS_PER_FRAME && nodes.length < MAX_NODES; s++) growStep();
+    if (nodes.length >= MAX_NODES) growing = false;
+  }
+  background(11, 11, 14);
+  renderCurve();
+}
+
+function initNodes() {
+  nodes = [];
+  const cx = width / 2, cy = height / 2;
+  const n = 140;
+  const baseRad = min(width, height) * 0.16;   // 起始圈放大
+  for (let i = 0; i < n; i++) {
+    const a = i / n * TWO_PI;
+    // 噪声扰动半径 → 起点就不是正圆，自带不规则
+    const wob = (noise(cos(a) * 0.8 + 5, sin(a) * 0.8 + 5) - 0.5) * baseRad * 1.1;
+    const rad = baseRad + wob;
+    nodes.push({ x: cx + cos(a) * rad + random(-3, 3),
+                 y: cy + sin(a) * rad + random(-3, 3) });
+  }
+}
+
+function growStep() {
+  const n = nodes.length;
+  const cell = R;
+  const grid = new Map();
+  const key = (gx, gy) => gx * 100000 + gy;
+  for (let i = 0; i < n; i++) {
+    const gx = Math.floor(nodes[i].x / cell), gy = Math.floor(nodes[i].y / cell);
+    const k = key(gx, gy);
+    if (!grid.has(k)) grid.set(k, []);
+    grid.get(k).push(i);
+  }
+
+  const nx = new Array(n), ny = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const p = nodes[i];
+    const prev = nodes[(i - 1 + n) % n], next = nodes[(i + 1) % n];
+    // 吸引：移向相邻两点中点（保持间距 + 平滑）
+    let ax = ((prev.x + next.x) / 2 - p.x) * KA;
+    let ay = ((prev.y + next.y) / 2 - p.y) * KA;
+    // 排斥：半径内所有点把它推开 → 线无法自交 → 向内折叠
+    let rx = 0, ry = 0;
+    const gx = Math.floor(p.x / cell), gy = Math.floor(p.y / cell);
+    for (let ox = -1; ox <= 1; ox++) for (let oy = -1; oy <= 1; oy++) {
+      const arr = grid.get(key(gx + ox, gy + oy));
+      if (!arr) continue;
+      for (const j of arr) {
+        if (j === i) continue;
+        const dx = p.x - nodes[j].x, dy = p.y - nodes[j].y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < R * R && d2 > 0.0001) {
+          const d = Math.sqrt(d2);
+          const f = (R - d) / R;
+          rx += dx / d * f; ry += dy / d * f;
+        }
+      }
+    }
+    // 噪声抖动 → 局部无序，破掉规整脑回
+    const jx = (noise(p.x * 0.012, p.y * 0.012, frameCount * 0.004) - 0.5) * JITTER;
+    const jy = (noise(p.x * 0.012 + 99, p.y * 0.012 + 99, frameCount * 0.004) - 0.5) * JITTER;
+    // 软边界：近边时向内推（penetration 越深推力越大），不再硬夹成直线
+    let bx = 0, by = 0;
+    if (p.x < MARGIN)          bx += (MARGIN - p.x) / MARGIN;
+    if (p.x > width - MARGIN)  bx -= (p.x - (width - MARGIN)) / MARGIN;
+    if (p.y < MARGIN)          by += (MARGIN - p.y) / MARGIN;
+    if (p.y > height - MARGIN) by -= (p.y - (height - MARGIN)) / MARGIN;
+    let X = p.x + ax + rx * KR + jx + bx * BFORCE;
+    let Y = p.y + ay + ry * KR + jy + by * BFORCE;
+    nx[i] = constrain(X, 3, width - 3);   // 仅做防越界保险，不参与构图
+    ny[i] = constrain(Y, 3, height - 3);
+  }
+  for (let i = 0; i < n; i++) { nodes[i].x = nx[i]; nodes[i].y = ny[i]; }
+  resample();
+}
+
+function resample() {
+  const out = [];
+  const n = nodes.length;
+  for (let i = 0; i < n; i++) {
+    const a = nodes[i], b = nodes[(i + 1) % n];
+    out.push(a);
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    // 生长阈值按区域噪声变化 → 有的地方挤密、有的稀疏 = 无序
+    const ml = MAXLEN * (0.6 + noise(a.x * 0.004, a.y * 0.004) * 1.0);
+    if (d > ml) out.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+  }
+  // 随机注入：让局部生长更快 → 不对称 → 自发起皱
+  if (out.length < MAX_NODES) {
+    const inject = 2;
+    for (let k = 0; k < inject; k++) {
+      const idx = floor(random(out.length));
+      const a = out[idx], b = out[(idx + 1) % out.length];
+      out.splice(idx + 1, 0, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+    }
+  }
+  nodes = out;
+}
+
+let RAMP = [];
+function buildRamp() {
+  RAMP = STOPS.map(h => color(h));
+}
+function rampColor(t) {
+  if (RAMP.length === 0) buildRamp();
+  const seg = (RAMP.length - 1) * constrain(t, 0, 0.9999);
+  const i = Math.floor(seg);
+  return lerpColor(RAMP[i], RAMP[i + 1], seg - i);
+}
+
+function renderCurve() {
+  // 15000 条线时单层渲染保帧率（去掉额外辉光层）
+  drawPath(1.3, 240);
+}
+
+function drawPath(w, alpha) {
+  const n = nodes.length;
+  strokeWeight(w);
+  for (let i = 0; i < n; i++) {
+    const a = nodes[i], b = nodes[(i + 1) % n];
+    const c = rampColor(i / n);
+    stroke(red(c), green(c), blue(c), alpha);
+    line(a.x, a.y, b.x, b.y);
+  }
+}
+</script>
+</body>
+</html>

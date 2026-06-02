@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Architecture · EMERGENCE No.2</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; }
+  html, body { height: 100%; background: #0b0b0e; overflow: hidden; }
+  #sig {
+    position: fixed; left: 22px; bottom: 18px; z-index: 10;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    color: rgba(200,210,225,0.32); font-size: 11px; letter-spacing: 2px;
+    pointer-events: none; user-select: none;
+  }
+  #hint {
+    position: fixed; right: 22px; bottom: 18px; z-index: 10;
+    font-family: ui-monospace, Menlo, monospace;
+    color: rgba(200,210,225,0.20); font-size: 10px; letter-spacing: 1px;
+    pointer-events: none; user-select: none;
+  }
+</style>
+</head>
+<body>
+  <div id="sig">ARCHITECTURE&nbsp;·&nbsp;EMERGENCE&nbsp;No.2</div>
+  <div id="hint">CLICK / SPACE → 换种子</div>
+<script>
+let SEED = 11;
+const GRID = 15;
+const STOPS = ['#2ec5b6', '#5bb0ff', '#7b6cff', '#ff6b8a', '#ffb36b'];
+
+let RAMP = [];
+function rampColor(t) {
+  if (!RAMP.length) RAMP = STOPS.map(h => color(h));
+  const seg = (RAMP.length - 1) * constrain(t, 0, 0.9999);
+  const i = Math.floor(seg);
+  return lerpColor(RAMP[i], RAMP[i + 1], seg - i);
+}
+
+function setup() { createCanvas(windowWidth, windowHeight); pixelDensity(2); noLoop(); redraw(); }
+function windowResized() { resizeCanvas(windowWidth, windowHeight); redraw(); }
+function keyPressed() { if (key === ' ') { SEED = floor(random(99999)); redraw(); } }
+function mousePressed() { SEED = floor(random(99999)); redraw(); }
+
+function draw() {
+  randomSeed(SEED);
+  noiseSeed(SEED);
+  background(11, 11, 14);
+
+  const minDim = min(width, height);
+  const tileW = minDim * 0.05;
+  const tileH = tileW * 0.55;
+  const maxH = minDim * 0.85;
+  const originX = width / 2;
+  const originY = height * 0.34;
+  const half = (GRID - 1) / 2;
+  const isoP = (nx, ny, z) => [originX + (nx - ny) * tileW, originY + (nx + ny) * tileH - z];
+
+  // 每格塔高由噪声决定，径向衰减 → 中间高四周低，成簇
+  const cells = [];
+  for (let gx = 0; gx < GRID; gx++) for (let gy = 0; gy < GRID; gy++) {
+    const nx = gx - half, ny = gy - half;
+    let h = pow(noise(gx * 0.22, gy * 0.22), 1.5) * maxH;
+    const dist = Math.sqrt(nx * nx + ny * ny) / half;
+    h *= constrain(1.2 - dist * 0.6, 0, 1.2);
+    cells.push({ nx, ny, h, key: gx + gy });
+  }
+  // 后→前绘制，前塔遮挡后塔
+  cells.sort((a, b) => a.key - b.key);
+  for (const c of cells) if (c.h > 6) drawTower(c.nx, c.ny, c.h, maxH, isoP);
+}
+
+function drawTower(nx, ny, h, maxH, isoP) {
+  const b = [isoP(nx - 0.5, ny - 0.5, 0), isoP(nx + 0.5, ny - 0.5, 0),
+             isoP(nx + 0.5, ny + 0.5, 0), isoP(nx - 0.5, ny + 0.5, 0)];
+  const t = [isoP(nx - 0.5, ny - 0.5, h), isoP(nx + 0.5, ny - 0.5, h),
+             isoP(nx + 0.5, ny + 0.5, h), isoP(nx - 0.5, ny + 0.5, h)];
+  const col = rampColor(constrain(h / maxH, 0, 1));
+
+  // 两个可见侧面用底色填充 → 遮挡后面的塔
+  noStroke();
+  fill(11, 11, 14);
+  quad(b[1][0], b[1][1], b[2][0], b[2][1], t[2][0], t[2][1], t[1][0], t[1][1]); // 右面
+  quad(b[2][0], b[2][1], b[3][0], b[3][1], t[3][0], t[3][1], t[2][0], t[2][1]); // 前面
+  // 顶面微染色
+  fill(red(col), green(col), blue(col), 22);
+  quad(t[0][0], t[0][1], t[1][0], t[1][1], t[2][0], t[2][1], t[3][0], t[3][1]);
+
+  // 发光边线
+  noFill();
+  stroke(red(col), green(col), blue(col), 215);
+  strokeWeight(1.1);
+  // 顶面菱形
+  quad(t[0][0], t[0][1], t[1][0], t[1][1], t[2][0], t[2][1], t[3][0], t[3][1]);
+  // 三条可见竖棱
+  line(b[1][0], b[1][1], t[1][0], t[1][1]);
+  line(b[2][0], b[2][1], t[2][0], t[2][1]);
+  line(b[3][0], b[3][1], t[3][0], t[3][1]);
+}
+</script>
+</body>
+</html>

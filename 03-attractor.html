@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Attractor · EMERGENCE No.3</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; }
+  html, body { height: 100%; background: #0b0b0e; overflow: hidden; }
+  #sig {
+    position: fixed; left: 22px; bottom: 18px; z-index: 10;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    color: rgba(200,210,225,0.32); font-size: 11px; letter-spacing: 2px;
+    pointer-events: none; user-select: none;
+  }
+  #hint {
+    position: fixed; right: 22px; bottom: 18px; z-index: 10;
+    font-family: ui-monospace, Menlo, monospace;
+    color: rgba(200,210,225,0.20); font-size: 10px; letter-spacing: 1px;
+    pointer-events: none; user-select: none;
+  }
+</style>
+</head>
+<body>
+  <div id="sig">ATTRACTOR&nbsp;·&nbsp;EMERGENCE&nbsp;No.3</div>
+  <div id="hint">CLICK / SPACE → 换种子</div>
+<script>
+let SEED = 42;
+const STOPS = ['#2ec5b6', '#5bb0ff', '#7b6cff', '#ff6b8a', '#ffb36b'];
+const N = 340000;   // 点数
+
+let RAMP = [];
+function rampColor(t) {
+  if (!RAMP.length) RAMP = STOPS.map(h => color(h));
+  const seg = (RAMP.length - 1) * constrain(t, 0, 0.9999);
+  const i = Math.floor(seg);
+  return lerpColor(RAMP[i], RAMP[i + 1], seg - i);
+}
+
+function setup() { createCanvas(windowWidth, windowHeight); pixelDensity(2); noLoop(); redraw(); }
+function windowResized() { resizeCanvas(windowWidth, windowHeight); redraw(); }
+function keyPressed() { if (key === ' ') { SEED = floor(random(99999)); redraw(); } }
+function mousePressed() { SEED = floor(random(99999)); redraw(); }
+
+function draw() {
+  randomSeed(SEED);
+  background(11, 11, 14);
+
+  // de Jong 吸引子：4 个参数定形态。自动排除"坍缩成一点"的退化解
+  let a, b, c, d, tries = 0;
+  while (tries < 40) {
+    a = random(-3, 3); b = random(-3, 3); c = random(-3, 3); d = random(-3, 3);
+    let tx = 0.1, ty = 0.1, minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
+    for (let i = 0; i < 1600; i++) {
+      const nx = Math.sin(a * ty) - Math.cos(b * tx);
+      const ny = Math.sin(c * tx) - Math.cos(d * ty);
+      tx = nx; ty = ny;
+      if (i > 300) {
+        minx = Math.min(minx, tx); maxx = Math.max(maxx, tx);
+        miny = Math.min(miny, ty); maxy = Math.max(maxy, ty);
+      }
+    }
+    tries++;
+    if ((maxx - minx) > 1.3 && (maxy - miny) > 1.3) break;   // 够展开 → 用它
+  }
+  const scale = min(width, height) * 0.21;
+  const cx = width / 2, cy = height / 2;
+
+  let x = random(-1, 1), y = random(-1, 1);
+  for (let i = 0; i < 1000; i++) {   // 预热，跳过初始瞬态
+    const nx = Math.sin(a * y) - Math.cos(b * x);
+    const ny = Math.sin(c * x) - Math.cos(d * y);
+    x = nx; y = ny;
+  }
+
+  blendMode(ADD);
+  strokeWeight(1.0);
+  for (let i = 0; i < N; i++) {
+    const nx = Math.sin(a * y) - Math.cos(b * x);
+    const ny = Math.sin(c * x) - Math.cos(d * y);
+    const speed = Math.hypot(nx - x, ny - y);   // 移动速度 → 上色
+    x = nx; y = ny;
+    const col = rampColor(constrain(speed / 3.2, 0, 1));
+    stroke(red(col), green(col), blue(col), 10);
+    point(cx + x * scale, cy + y * scale);
+  }
+  blendMode(BLEND);
+}
+</script>
+</body>
+</html>
