@@ -53,9 +53,7 @@ function draw() {
   const tileH = tileW * 0.55;
   const maxH = minDim * 0.85;
   const originX = width / 2;
-  const originY = height * 0.34;
   const half = (GRID - 1) / 2;
-  const isoP = (nx, ny, z) => [originX + (nx - ny) * tileW, originY + (nx + ny) * tileH - z];
 
   // 每格塔高由噪声决定，径向衰减 → 中间高四周低，成簇
   const cells = [];
@@ -66,6 +64,19 @@ function draw() {
     h *= constrain(1.2 - dist * 0.6, 0, 1.2);
     cells.push({ nx, ny, h, key: gx + gy });
   }
+
+  // 测几何垂直范围（不含 originY），据此把整体居中到画面中线
+  let minY = 1e9, maxY = -1e9;
+  for (const c of cells) {
+    if (c.h <= 6) continue;
+    const baseY = (c.nx + c.ny) * tileH;   // z=0 底
+    const topY = baseY - c.h;              // z=h 顶
+    if (topY - tileH < minY) minY = topY - tileH;
+    if (baseY + tileH > maxY) maxY = baseY + tileH;
+  }
+  const originY = height / 2 - (minY + maxY) / 2;
+  const isoP = (nx, ny, z) => [originX + (nx - ny) * tileW, originY + (nx + ny) * tileH - z];
+
   // 后→前绘制，前塔遮挡后塔
   cells.sort((a, b) => a.key - b.key);
   for (const c of cells) if (c.h > 6) drawTower(c.nx, c.ny, c.h, maxH, isoP);
