@@ -6,9 +6,13 @@
 
 🔗 **在线演示**：https://jada-q.github.io/emergence/
 
+![三件轮播](assets/reel.gif)
+
+> 三件依次：生长 → 构造 → 吸引子（循环）。
+
 ## 演示（实时动态）
 
-> 以下为录屏 GIF（循环）。打开[在线演示](https://jada-q.github.io/emergence/)可交互、换种子。
+> 以下为单件录屏 GIF（循环）。打开[在线演示](https://jada-q.github.io/emergence/)可交互、换种子。
 
 **No.1 · GROWTH** — 差分生长，一条闭合线实时折叠成有机网
 ![Growth](assets/no1-growth.gif)
