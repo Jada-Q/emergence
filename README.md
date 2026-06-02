@@ -33,6 +33,27 @@
 - **No.2 生成构造**：等距投影网格，每格塔高由 Perlin 噪声 + 径向衰减决定，后→前绘制做遮挡，发光边线按高度上色。
 - **No.3 奇异吸引子**：de Jong 公式 `x'=sin(a·y)−cos(b·x)` / `y'=sin(c·x)−cos(d·y)` 迭代百万次，点按移动速度上色。自动排除"坍缩成一点"的退化参数。
 
+## 技术栈
+
+刻意做薄：单文件、零构建、零依赖（仅一个 CDN 库）。
+
+| 层 | 用什么 | 说明 |
+|----|--------|------|
+| 绘图库 | **p5.js** `1.9.0`（CDN） | Processing 的 JS 版，提供 canvas 封装 + `setup()`/`draw()` 生命周期 + 噪声/随机/颜色工具 |
+| 渲染 | **HTML Canvas 2D** | p5 底层即浏览器原生 canvas，所有线/点/方块画于此 |
+| 语言 | **纯 JavaScript** | 无框架（无 React/Vue）、无打包工具（无 Webpack/Vite），每件一个 `.html` |
+| 复现 | **seeded 随机** | `randomSeed` / `noiseSeed` + **Perlin 噪声** `noise()` → 同种子同图，可复现 |
+| 演示托管 | **GitHub Pages** | 静态托管，零服务器 |
+| README 动图 | **headless Chrome + ffmpeg** | puppeteer-core 录帧 → ffmpeg `palettegen` 合成防色带 loop GIF |
+
+各件用到的算法/技巧：
+
+- **No.1**：自定义物理模拟（邻居吸引 + 排斥力 + 空间哈希网格加速碰撞查询）
+- **No.2**：等距投影（isometric）数学 + 后→前画家算法做遮挡
+- **No.3**：de Jong 迭代公式 + `blendMode(ADD)` 加色辉光 + 拖尾残影
+
+> 为什么这么薄：生成艺术的甜区就是 p5.js，三个小作品不必上 React/Three.js 重型栈。单文件无依赖 = 拖进浏览器即跑，十年后也不会因构建工具过时而坏。
+
 ## 运行
 
 任一 html 直接拖进浏览器即可（file:// 也行）。或本地起 server：
